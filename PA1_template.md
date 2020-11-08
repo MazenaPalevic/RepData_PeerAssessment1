@@ -1,157 +1,123 @@
----
-title: "Markdown"
-author: "Mazena"
-date: "11/8/2020"
-output: html_document
----
+Loading and tidying data:
+-------------------------
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(ggplot2)
-library(lattice)
-```
+    data <- read.csv(unz("activity.zip", "activity.csv"))
+    data <- transform(data, date = as.Date(date))
 
-## Loading and tidying data:
-```{r}
-data <- read.csv(unz("activity.zip", "activity.csv"))
-data <- transform(data, date = as.Date(date))
-```
-
-
-## Mean total number of steps taken per day:
+Mean total number of steps taken per day:
+-----------------------------------------
 
 Exclude NA:
-```{r}
-available_data <- data[!is.na(data[1]),]
-```
 
+    available_data <- data[!is.na(data[1]),]
 
-```{r}
-get_steps_per_day <- function(d) {
-  steps_per_day <- tapply(d$steps, d$date, sum)
-  
-  
-  steps_per_day <-
-    data.frame(cbind(day = names(steps_per_day), steps = steps_per_day))
-  
-  rownames(steps_per_day) <- NULL
-  
-  steps_per_day <- transform(steps_per_day, day = as.Date(day))
-  steps_per_day <- transform(steps_per_day, steps = as.numeric(as.character(steps)))
-}
-get_steps_per_interval <- function(d) {
-  steps_per_interval <- tapply(d$steps, d$interval, mean)
-  
- 
-  
-  steps_per_interval <- 
-    data.frame(cbind(interval = names(steps_per_interval), steps = steps_per_interval))
-  
-  rownames(steps_per_interval) <- NULL
-  
-  steps_per_interval <- transform(steps_per_interval, interval = as.numeric(as.character(interval)))
-  steps_per_interval <- transform(steps_per_interval, steps = as.numeric(as.character(steps)))
-}
-```
+    get_steps_per_day <- function(d) {
+      steps_per_day <- tapply(d$steps, d$date, sum)
+      
+      
+      steps_per_day <-
+        data.frame(cbind(day = names(steps_per_day), steps = steps_per_day))
+      
+      rownames(steps_per_day) <- NULL
+      
+      steps_per_day <- transform(steps_per_day, day = as.Date(day))
+      steps_per_day <- transform(steps_per_day, steps = as.numeric(as.character(steps)))
+    }
+    get_steps_per_interval <- function(d) {
+      steps_per_interval <- tapply(d$steps, d$interval, mean)
+      
+     
+      
+      steps_per_interval <- 
+        data.frame(cbind(interval = names(steps_per_interval), steps = steps_per_interval))
+      
+      rownames(steps_per_interval) <- NULL
+      
+      steps_per_interval <- transform(steps_per_interval, interval = as.numeric(as.character(interval)))
+      steps_per_interval <- transform(steps_per_interval, steps = as.numeric(as.character(steps)))
+    }
 
 Total steps per day:
-```{r}
-total_steps_per_day_with_available_data <- get_steps_per_day(available_data)
-```
+
+    total_steps_per_day_with_available_data <- get_steps_per_day(available_data)
 
 Histogram of the above:
 
-```{r echo=FALSE}
-ggplot(total_steps_per_day_with_available_data, aes(x = day, y = steps)) + geom_bar(stat = 'identity') + ylab("total steps")
-```
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-5-1.png)
 
 Mean and median of the above:
-```{r}
-mean_avaialble_steps <- mean(total_steps_per_day_with_available_data$steps)
-median_available_steps <- median(total_steps_per_day_with_available_data$steps)
-```
 
-The mean and median of the total steps per day are **`r formatC(mean_avaialble_steps, format="d", big.mark=",")`** and **`r formatC(median_available_steps, format="d", big.mark=",")`**.
+    mean_avaialble_steps <- mean(total_steps_per_day_with_available_data$steps)
+    median_available_steps <- median(total_steps_per_day_with_available_data$steps)
 
-## Average daily activity pattern?
+The mean and median of the total steps per day are **10,766** and
+**10,765**.
 
+Average daily activity pattern?
+-------------------------------
 
-```{r}
-average_steps_per_interval_with_available_data <- get_steps_per_interval(available_data)
-```
+    average_steps_per_interval_with_available_data <- get_steps_per_interval(available_data)
 
 A plot of the above:
-```{r echo=FALSE}
-plot(average_steps_per_interval_with_available_data$interval, average_steps_per_interval_with_available_data$steps, type = "l", xlab = "interval", ylab = "average steps")
-```
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-8-1.png)
 
 Maximum average steps:
-```{r}
-is_max <-
-  average_steps_per_interval_with_available_data$steps ==
-    max(average_steps_per_interval_with_available_data$steps)
-max_per_interval <- average_steps_per_interval_with_available_data[is_max,]
-interval_for_max <- max_per_interval$interval
-```
 
-The interval with the maximum average steps is **`r interval_for_max`**.
+    is_max <-
+      average_steps_per_interval_with_available_data$steps ==
+        max(average_steps_per_interval_with_available_data$steps)
+    max_per_interval <- average_steps_per_interval_with_available_data[is_max,]
+    interval_for_max <- max_per_interval$interval
 
-## Imputing missing values
+The interval with the maximum average steps is **835**.
+
+Imputing missing values
+-----------------------
 
 Calcualte the total number of missing values in the databaset:
-```{r}
-total_missing_values <- sum(is.na(data$steps))
-```
 
-The total number of missing values is **`r total_missing_values`**.
+    total_missing_values <- sum(is.na(data$steps))
 
-Fill in the missing values by using the average available steps for a given interval and call it `filled_data`:
-```{r}
-filled_data <- data
-na_indices <- which(is.na(filled_data$steps))
-ave_steps <- average_steps_per_interval_with_available_data # shorten for readability
-for(i in na_indices) {
-  interval <- filled_data$interval[i]
-  filled_data$steps[i] <- ave_steps[ave_steps$interval ==interval,]$steps
-}
-```
+The total number of missing values is **2304**.
+
+Fill in the missing values by using the average available steps for a
+given interval and call it `filled_data`:
+
+    filled_data <- data
+    na_indices <- which(is.na(filled_data$steps))
+    ave_steps <- average_steps_per_interval_with_available_data # shorten for readability
+    for(i in na_indices) {
+      interval <- filled_data$interval[i]
+      filled_data$steps[i] <- ave_steps[ave_steps$interval ==interval,]$steps
+    }
 
 A histogram of the total steps per day with the filled in data:
-```{r echo=FALSE}
-total_steps_per_day_with_filled_data <- get_steps_per_day(filled_data)
-ggplot(total_steps_per_day_with_filled_data, aes(x = day, y = steps)) +
-  geom_bar(stat = "identity") +
-  ylab("total steps")
-```
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-12-1.png)
 
-Calculate the mean and medial total number of steps taken per day with the filled in data:
-```{r}
-mean_filled_steps <- mean(total_steps_per_day_with_filled_data$steps)
-median_filled_steps <- median(total_steps_per_day_with_filled_data$steps)
-```
+Calculate the mean and medial total number of steps taken per day with
+the filled in data:
 
-The mean and remdian of the total steps taken per day with filled in data are **`r formatC(mean_filled_steps, format="d", big.mark=",")`** and **`r formatC(median_filled_steps, format="d", big.mark=",")`**, respectively. This compares to **`r formatC(mean_avaialble_steps, format="d", big.mark=",")`** and **`r formatC(median_available_steps, format="d", big.mark=",")`** for data without missing values, which are very close. So we conclude that filling in missing values have no meaningful impact to the calculations
+    mean_filled_steps <- mean(total_steps_per_day_with_filled_data$steps)
+    median_filled_steps <- median(total_steps_per_day_with_filled_data$steps)
 
-## Are there differences in activity patterns between weekdays and weekends?
+The mean and remdian of the total steps taken per day with filled in
+data are **10,766** and **10,766**, respectively. This compares to
+**10,766** and **10,765** for data without missing values, which are
+very close. So we conclude that filling in missing values have no
+meaningful impact to the calculations
 
-Add a weekday / weekend factor variable to the filled data to indicate what type of day the steps were taken in:
-```{r}
-weekdays_list <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
-filled_data$day_of_week <- weekdays(filled_data$date)
-filled_data$type_of_day <-
-  factor(filled_data$day_of_week %in% weekdays_list,
-         levels = c(FALSE, TRUE),
-         labels = c("weekend", "weekday"))
-```
+Are there differences in activity patterns between weekdays and weekends?
+-------------------------------------------------------------------------
 
-A panel plot that compares steps taken during a weekend vs. a weekday:
-```{r echo=FALSE}
-weekday_data <- filled_data[filled_data$type_of_day == "weekday",]
-weekend_data <- filled_data[filled_data$type_of_day == "weekend",]
-weekday_steps <- get_steps_per_interval(weekday_data)
-weekend_steps <- get_steps_per_interval(weekend_data)
-weekday_steps$type_of_day <- factor(TRUE, levels = c(FALSE, TRUE), labels = c("weekend", "weekday"))
-weekend_steps$type_of_day <- factor(FALSE, levels = c(FALSE, TRUE), labels = c("weekend", "weekday"))
-weekday_weekend_steps <- rbind(weekday_steps, weekend_steps)
-xyplot(steps ~ interval | type_of_day, data = weekday_weekend_steps, layout = c(1,2), type = "l", xlab = "Interval", ylab = "Number of steps")
-```
+Add a weekday / weekend factor variable to the filled data to indicate
+what type of day the steps were taken in:
+
+    weekdays_list <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+    filled_data$day_of_week <- weekdays(filled_data$date)
+    filled_data$type_of_day <-
+      factor(filled_data$day_of_week %in% weekdays_list,
+             levels = c(FALSE, TRUE),
+             labels = c("weekend", "weekday"))
+
+A panel plot that compares steps taken during a weekend vs. a weekday:
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-15-1.png)
